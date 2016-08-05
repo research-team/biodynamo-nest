@@ -6,9 +6,8 @@ k_X = 0          # float:   X coord
 k_Y = 1          # float:   Y coord
 k_neighbors  = 2 # dict():  info about neighbors
 k_detector   = 3 # tuple(): nest detector tuple
-k_multimeter = 4 # tuple(): nest multimeter tuple
-k_activity   = 5 # list():  activity info of neuron
-k_model      = 6 # str      type of nerotransmitter
+k_activity   = 4 # list():  activity info of neuron
+k_model      = 5 # str      type of nerotransmitter
 
 # For ACTIVITY list
 k_result = 0    # float:   growing up distance value
@@ -27,6 +26,15 @@ static_syn   = 'gen_synapse'
 # Synapses weight
 w_Glu  = 3.
 w_GABA = -w_Glu * 2
+
+# RANDOM grow or not
+random_value = 0.5 # 0.5 ~ 50/50
+
+# mean and standard deviation for growing distance
+mu, sigma = 0.4, 0.07
+
+# divide Normal distr by
+div = 2
 
 # Simulation iteration
 time = 40

@@ -7,6 +7,7 @@ start_time = 0
 time_simulation = 0
 time_init = 0
 
+
 def formula(new_size, old_size):
     """ Grow up distance formula"""
     events = new_size - old_size
@@ -29,17 +30,17 @@ def getNeighbors(coords, radius):
     """ Return list of neighbors for these coords in radius"""
     x = coords[0]
     y = coords[1]
-    neigbors_list = []
+    neighbors_list = []
     radCube = radius ** 2
     # FixMe not perfomance algorithm, try to optimize
     for neuron_id in network:
         neuron = network[neuron_id]
         if (x - neuron[k_X]) ** 2 + (y - neuron[k_Y]) ** 2 <= radCube:
-            neigbors_list.append(neuron_id)
+            neighbors_list.append(neuron_id)
     # delete center neuron
-    neigbors_list.remove(getID(x, y))
+    neighbors_list.remove(getID(x, y))
 
-    return neigbors_list
+    return neighbors_list
 
 
 def connect(pre, post, step):
@@ -90,11 +91,8 @@ def initialize(n, m, radius):
         spike_detector = nest.Create('spike_detector')
         nest.Connect( (neuron_id,), spike_detector )
 
-        mm = nest.Create('multimeter', params=multimeter_param)
-        nest.Connect( mm, (neuron_id,) )
-
         # expand data by concatenation of tuples
-        network[neuron_id] += (dict(dict_neighbors), spike_detector, mm, [0, 0])
+        network[neuron_id] += (dict(dict_neighbors), spike_detector, [0, 0])
 
         # init neurotransmitter type
         if neuron_id in inhibitory_neurons_temp:
@@ -116,44 +114,24 @@ def initialize(n, m, radius):
     time_init = datetime.datetime.now() - start_time
 
 
-def initActivity():
-    """ Calculate activity of neuron"""
-    for neuron_id in network:
-        # get old size of events
-        old_size = network[neuron_id][k_activity][k_size]
-        # get new size of events
-        new_size = len(nest.GetStatus(network[neuron_id][k_detector])[0]['events']['times'])
-        # if was any activity
-        if new_size != old_size:
-            # get grow up value by formula and activity
-            result = formula(new_size, old_size)
-            # if activity is growing up
-            if result >= network[neuron_id][k_activity][k_result]:
-                # set new growing distance value
-                network[neuron_id][k_activity][k_result] = result
-            else:
-                # set zero growing distance value
-                network[neuron_id][k_activity][k_result] = 0
-        # update the size of senders
-        network[neuron_id][k_activity][k_size] = new_size
-
-
 def updateDistanceAndCheck(step):
     """ Update distances for all neighbors of neuron"""
     for neuron_id in network:
         for neighbor_id in network[neuron_id][k_neighbors]:
             # update info if neurons are not connected
-            if not network[neuron_id][k_neighbors][neighbor_id][k_connected]:
-                # get list of information between neuron and his neighbor
-                neighbor_info = network[neuron_id][k_neighbors][neighbor_id]
-                # increase current distance by new grow up value
-                neighbor_info[k_current] += network[neighbor_id][k_activity][k_result]
-                # check if there new connections
-                if neighbor_info[k_current] >= neighbor_info[k_absolute]:
-                    # connect them, also send log information about 'step' iteartion
-                    connect(neighbor_id, neuron_id, step)
-                    # Set 'connected' status
-                    network[neuron_id][k_neighbors][neighbor_id][k_connected] = True
+            # RANDOM
+            if random.random() < random_value:
+                if not network[neuron_id][k_neighbors][neighbor_id][k_connected]:
+                    # get list of information between neuron and his neighbor
+                    neighbor_info = network[neuron_id][k_neighbors][neighbor_id]
+                    # increase current distance by new grow up value
+                    neighbor_info[k_current] += np.random.normal(mu, sigma) / div
+                    # check if there new connections
+                    if neighbor_info[k_current] >= neighbor_info[k_absolute]:
+                        # connect them, also send log information about 'step' iteartion
+                        connect(neighbor_id, neuron_id, step)
+                        # Set 'connected' status
+                        network[neuron_id][k_neighbors][neighbor_id][k_connected] = True
     if draw_flag:
         draw(step)
 
@@ -164,8 +142,6 @@ def simulate(steps):
     for step in xrange(steps):
         # Simulate dt
         nest.Simulate(dt)
-        # Refresh activity
-        initActivity()
         # Update info and check on connection
         updateDistanceAndCheck(step)
     time_simulation = datetime.datetime.now() - start_time
@@ -191,12 +167,10 @@ def save():
 
     with open("database.txt", 'w') as f:
         for neuron_id in network:
-            f.write('{0} | {1} | {2} | {3} | {4}\n'.format(
+            f.write('{0} | {1} | {2}\n'.format(
                 neuron_id,
                 network[neuron_id][:2],
-                [round(item, 1) for item in nest.GetStatus(network[neuron_id][k_detector])[0]['events']['times']],
-                [round(item, 1) for item in nest.GetStatus(network[neuron_id][k_multimeter])[0]['events']['V_m']],
-                [round(item, 1) for item in nest.GetStatus(network[neuron_id][k_multimeter])[0]['events']['times']]))
+                [round(item, 1) for item in nest.GetStatus(network[neuron_id][k_detector])[0]['events']['times']]))
 
 
 def draw(step):
